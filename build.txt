@@ -1,0 +1,9 @@
+displayName = Dragon Ball Terraria Balance: Revived (LSSJ4Fix)
+author = KoTBHoco4KAX
+version = 1.0
+homepage = https://github.com/KoTBHoco4KAX/DBTBalanceRevivedLSSJ4Fix-LSSJ4Fix
+modReferences = DBZMODPORT, DBZGoatLib
+weakReferences = CalamityMod, dbzcalamity
+buildIgnore = *.csproj, *.user, obj\*, bin\*, lib\*, .vs\*
+includeSource = true
+sortAfter = DBZMODPORT, CalamityMod, dbzcalamity

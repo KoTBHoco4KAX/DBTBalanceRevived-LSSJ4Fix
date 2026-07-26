@@ -1,0 +1,90 @@
+using DBTBalanceRevivedLSSJ4Fix.Helpers;
+using dbzcalamity;
+using DBZGoatLib;
+using DBZMODPORT;
+using DBZMODPORT.Projectiles;
+using System;
+using System.IO;
+using System.Reflection;
+using Terraria;
+using Terraria.ModLoader;
+
+namespace DBTBalanceRevivedLSSJ4Fix;
+
+public class DBTBalanceRevivedLSSJ4Fix : Mod
+{
+    public static DBTBalanceRevivedLSSJ4Fix Instance;
+    public static Mod DBZMOD;
+    public static Mod DBCA;
+    public static Mod GOATLIB;
+
+    public const BindingFlags flagsAll = BindingFlags.Public | BindingFlags.NonPublic
+    | BindingFlags.Instance | BindingFlags.Static | BindingFlags.GetField
+    | BindingFlags.SetField | BindingFlags.GetProperty | BindingFlags.SetProperty;
+    public override void PostSetupContent()
+    {
+        AccessoryHooks.Initialize();
+    }
+    public override void Load()
+    {
+        Instance = this;
+
+        DBZMOD = ModLoader.GetMod("DBZMODPORT");
+
+        Type myPlayer = typeof(MyPlayer);
+        Type baseBeamCharge = typeof(BaseBeamCharge);
+
+        MonoModHooks.Add(typeof(BaseBeam).GetMethod(nameof(BaseBeam.ModifyHitNPC)), Hooks.BaseBeam_ModifyHitNPC_Hook);
+        MonoModHooks.Add(myPlayer.GetMethod(nameof(MyPlayer.ResetEffects)), Hooks.MyPlayer_ResetEffects_Hook);
+        MonoModHooks.Add(myPlayer.GetMethod(nameof(MyPlayer.PowerWishMulti)), Hooks.MyPlayer_PowerWishMulti_Hook);
+        MonoModHooks.Add(myPlayer.GetMethod(nameof(MyPlayer.HandlePowerWishMultipliers)), Hooks.MyPlayer_HandlePowerWishMultipliers_Hook);
+        MonoModHooks.Add(baseBeamCharge.GetMethod("GetBeamPowerMultiplier", BindingFlags.Instance | BindingFlags.NonPublic), Hooks.BaseBeamCharge_GetBeamPowerMultiplier_Hook);
+        MonoModHooks.Add(baseBeamCharge.GetMethod("GetBeamDamage", BindingFlags.Instance | BindingFlags.NonPublic), Hooks.BaseBeamCharge_GetBeamDamage_Hook);
+        MonoModHooks.Add(typeof(AbstractChargeBall).GetMethod(nameof(AbstractChargeBall.HandleChargingKi)), Hooks.AbstractChargeBall_HandleChargingKi_Hook);
+        MonoModHooks.Modify(typeof(KiProjectile).GetMethod(nameof(KiProjectile.OnHitNPC)), Hooks.KiProjectile_OnHitNPC_Hook);
+
+        foreach (var type in Hooks.ProjectilesWithIncorrectInfuserHandling)
+        {
+            MonoModHooks.Modify(type.GetMethod(nameof(KiProjectile.OnHitNPC)), Hooks.FixInfuserEffectForProjectile);
+        }
+
+        foreach (var type in AccessoryHooks.UpgradeTypes)
+        {
+            MonoModHooks.Add(type.GetMethod("UpdateAccessory"), AccessoryHooks.Update_hook);
+        }
+
+        foreach (var adj in BuffHooks.Adjustments)
+        {
+            MonoModHooks.Add(adj.Key.GetMethod("SetStaticDefaults"), BuffHooks.SetStaticDefaults_Hook);
+            MonoModHooks.Add(adj.Key.GetMethod("Update", [typeof(Player), typeof(int).MakeByRefType()]), BuffHooks.Update_Hook);
+        }
+
+        foreach (var armor in ArmorHooks.ArmorTypes)
+        {
+            MonoModHooks.Add(armor.GetMethod("SetDefaults"), ArmorHooks.Armor_SetStaticDefaults); // idk why this hook is named wrong but i'm gonna keep it :)
+        }
+
+        GOATLIB = ModLoader.GetMod("DBZGoatLib");
+        MonoModHooks.Add(typeof(GPlayer).GetMethod("ProcessTransformationTriggers"), (Action<GPlayer> orig, GPlayer self) => { });
+
+        if (ModLoader.TryGetMod("dbzcalamity", out Mod dbca))
+        {
+            DBCA = dbca;
+            LoadHooksCalamity();
+        }
+    }
+
+    [JITWhenModsEnabled("dbzcalamity")]
+    private static void LoadHooksCalamity()
+    {
+        MonoModHooks.Add(typeof(dbzcalamityPlayer).GetMethod("GetDodgeCost"), DBCAHooks.DBCA_GetDodgeCost_Hook);
+    }
+    public override void Unload()
+    {
+        Instance = null;
+        DBZMOD = null;
+        DBCA = null;
+        GOATLIB = null;
+    }
+    public override void HandlePacket(BinaryReader reader, int whoAmI) => BNetworkHandler.HandlePacket(reader, whoAmI);
+}

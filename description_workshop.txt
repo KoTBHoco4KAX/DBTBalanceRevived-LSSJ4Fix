@@ -1,0 +1,11 @@
+[h1]DBT Balance Revived: LSSJ4 Unofficial Fix[/h1]
+
+This is a temporary fan-made hotfix for the LSSJ4 transformation runtime crash. 
+
+[h2]IMPORTANT:[/h2]
+You MUST disable the original "Dragon Ball Terraria Balance: Revived" mod by qangel to use this patch, otherwise your game will crash due to duplicate IDs.
+
+All credits for the original mod base and sprites go to the original DBT team. This patch strictly fixes broken asset paths in the legacy C# code. I will remove this workshop item if the original author releases an official update.
+
+[url=https://github.com/KoTBHoco4KAX/DBTBalanceRevivedLSSJ4Fix-LSSJ4Fix]GitHub (Source Code)[/url]
+
